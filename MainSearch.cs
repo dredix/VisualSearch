@@ -12,7 +12,7 @@ namespace VisualSearch
     {
 
         // Const values
-        private const int MAX_COMBOBOX_ITEMS = 20;
+        private const int MAX_COMBOBOX_ITEMS = 20; // Number of items to remember in a combo box.   
 
 
         private BindingList<CMatch> matches;
@@ -279,6 +279,8 @@ namespace VisualSearch
         {
             if (grdResults.SelectedRows.Count <= 0) return;
             var row = grdResults.SelectedRows[0];
+            // Change this if you want the double click action to do something different
+            // instead of opening EditPad Pro.
             Process.Start("EditPadPro", string.Format("\"{0}\" /l{1}",
                 row.Cells["FullPath"].Value, row.Cells["Line"].Value));
         }
