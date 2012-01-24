@@ -57,7 +57,6 @@
             this.lblSearch = new System.Windows.Forms.Label();
             this.grdResults = new System.Windows.Forms.DataGridView();
             this.barSearch = new System.Windows.Forms.ProgressBar();
-            this.wrkSearch = new System.ComponentModel.BackgroundWorker();
             this.fileSelDir = new System.Windows.Forms.OpenFileDialog();
             this.panel1.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -137,8 +136,8 @@
             // 
             // txtDebug
             // 
-            this.txtDebug.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.txtDebug.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
             this.txtDebug.BackColor = System.Drawing.Color.Black;
             this.txtDebug.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.txtDebug.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
@@ -366,9 +365,9 @@
             this.grdResults.AllowUserToDeleteRows = false;
             this.grdResults.AllowUserToOrderColumns = true;
             this.grdResults.AllowUserToResizeRows = false;
-            this.grdResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.grdResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.grdResults.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.DisplayedCells;
             this.grdResults.BackgroundColor = System.Drawing.Color.Black;
             this.grdResults.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -391,21 +390,13 @@
             // 
             // barSearch
             // 
-            this.barSearch.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.barSearch.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.barSearch.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
             this.barSearch.Location = new System.Drawing.Point(4, 7);
             this.barSearch.Name = "barSearch";
             this.barSearch.Size = new System.Drawing.Size(596, 23);
             this.barSearch.TabIndex = 0;
-            // 
-            // wrkSearch
-            // 
-            this.wrkSearch.WorkerReportsProgress = true;
-            this.wrkSearch.WorkerSupportsCancellation = true;
-            this.wrkSearch.DoWork += new System.ComponentModel.DoWorkEventHandler(this.wrkSearch_DoWork);
-            this.wrkSearch.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.wrkSearch_RunWorkerCompleted);
-            this.wrkSearch.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.wrkSearch_ProgressChanged);
             // 
             // fileSelDir
             // 
@@ -428,9 +419,9 @@
             this.Name = "MainSearch";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Visual Search";
+            this.Activated += new System.EventHandler(this.MainSearch_Activated);
             this.Deactivate += new System.EventHandler(this.MainSearch_Deactivate);
             this.Load += new System.EventHandler(this.MainSearch_Load);
-            this.Activated += new System.EventHandler(this.MainSearch_Activated);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
@@ -471,7 +462,6 @@
         private System.Windows.Forms.CheckBox chkDebug;
         private System.Windows.Forms.TextBox txtDebug;
         private System.Windows.Forms.DataGridView grdResults;
-        private System.ComponentModel.BackgroundWorker wrkSearch;
         private System.Windows.Forms.OpenFileDialog fileSelDir;
         private System.Windows.Forms.Label lblSearch;
         private System.Windows.Forms.CheckBox chkTopMost;

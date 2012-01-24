@@ -19,6 +19,7 @@ namespace VisualSearch
         private string StartingFolder { get; set; }
         private String StartingSearch { get; set; }
         private bool DebugOnStart { get; set; }
+        private SearchWorker searchWorker;
 
         public MainSearch()
         {
@@ -31,6 +32,9 @@ namespace VisualSearch
         {
             ParseArguments(args, input);
             SetLocation();
+            searchWorker = new SearchWorker();
+            searchWorker.ProgressChanged += searchWorker_ProgressChanged;
+            searchWorker.RunWorkerCompleted += searchWorker_RunWorkerCompleted;
         }
 
         private void ParseArguments(string[] args, string input)
@@ -66,11 +70,6 @@ namespace VisualSearch
             this.Top = Screen.PrimaryScreen.WorkingArea.Height - this.Height;
         }
 
-        private static bool IsEmpty(string str)
-        {
-            return (string.IsNullOrEmpty(str) || str.Trim() == string.Empty);
-        }
-
         private void Message(string message)
         {
             lblSearch.Text = message;
@@ -101,7 +100,7 @@ namespace VisualSearch
 
         private bool IsValid()
         {
-            if (IsEmpty(cmbFind.Text) || IsEmpty(cmbDirectory.Text) || IsEmpty(cmbFilters.Text))
+            if (SearchUtils.IsEmpty(cmbFind.Text) || SearchUtils.IsEmpty(cmbDirectory.Text) || SearchUtils.IsEmpty(cmbFilters.Text))
             {
                 Message("Text to find, filter and directory are required.");
                 return false;
@@ -141,94 +140,12 @@ namespace VisualSearch
             if (rbRegex.Checked) sc.SearchMode = SearchCriteria.SearchModes.RegEx;
             else if (rbExtended.Checked) sc.SearchMode = SearchCriteria.SearchModes.Extended;
             else sc.SearchMode = SearchCriteria.SearchModes.Normal;
-            wrkSearch.RunWorkerAsync(sc);
+            searchWorker.Execute(sc);
             btnSearch.Enabled = false;
             btnClose.Text = "Cancel";
         }
 
-        private void wrkSearch_DoWork(object sender, DoWorkEventArgs e)
-        {
-            SearchCriteria sc = e.Argument as SearchCriteria;
-            if (sc == null) return;
-            if (wrkSearch.CancellationPending)
-            {
-                e.Cancel = true;
-                e.Result = "Search was cancelled";
-                return;
-            }
-            try
-            {
-                wrkSearch.ReportProgress(0, "Retrieving list of files");
-                SearchOption searchOption = sc.InSubFolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                var files = new HashSet<string>();
-                {
-                    string[] filters = sc.Filter.Split(';');
-                    foreach (string filter in filters)
-                        files.UnionWith(Directory.GetFiles(sc.Folder, filter, searchOption));
-                }
-                if (!IsEmpty(sc.Exclude))
-                {
-                    string[] excluded = sc.Exclude.Split(';');
-                    foreach (string exclude in excluded)
-                        files.ExceptWith(Directory.GetFiles(sc.Folder, exclude, searchOption));
-                }
-                double incr = 100d / (double)files.Count;
-                double total = 0d;
-                int fileCount = 0, matchCount = 0, position;
-                bool fileMatch;
-                SearchEngine engine = new SearchEngine(sc);
-                foreach (string file in files)
-                {
-                    if (wrkSearch.CancellationPending)
-                    {
-                        e.Cancel = true;
-                        e.Result = "Search was cancelled";
-                        return;
-                    }
-                    total += incr;
-                    wrkSearch.ReportProgress((int)total, "Searching " + Path.GetFileName(file));
-                    string[] lines = File.ReadAllLines(file);
-                    fileMatch = false;
-                    int matchLimit = 0;
-                    for (int i = 0; i < lines.Length; i++)
-                    {
-                        if (wrkSearch.CancellationPending)
-                        {
-                            e.Cancel = true;
-                            e.Result = "Search was cancelled";
-                            return;
-                        }
-                        position = engine.Search(lines[i]);
-                        if (position >= 0)
-                        {
-                            matchCount++;
-                            fileMatch = true;
-                            CMatch match = new CMatch(Path.GetFullPath(file), i + 1,
-                                lines[i].Length <= 80 ? lines[i] : SubMatch(lines[i], position));
-                            wrkSearch.ReportProgress((int)total, match);
-                            if (++matchLimit >= 100)
-                                break;
-                        }
-                    }
-                    if (fileMatch) fileCount++;
-                }
-                e.Result = string.Format("Searched {0} files. Found {1} matches in {2} files.",
-                    files.Count, matchCount, fileCount);
-            }
-            catch (Exception ex)
-            {
-                e.Result = ex.Message;
-            }
-        }
-
-        private static string SubMatch(string str, int pos)
-        {
-            return pos > str.Length - 77 ?
-                "..." + str.Substring(str.Length - 77) :
-                "..." + str.Substring(pos, 74) + "...";
-        }
-
-        private void wrkSearch_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        private void searchWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             barSearch.Value = e.ProgressPercentage;
             if (e.UserState != null)
@@ -245,7 +162,7 @@ namespace VisualSearch
             }
         }
 
-        private void wrkSearch_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void searchWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Cancelled)
             {
@@ -287,9 +204,9 @@ namespace VisualSearch
 
         private void btnClose_Click(object sender, EventArgs e)
         {
-            if (wrkSearch.IsBusy && !wrkSearch.CancellationPending)
+            if (searchWorker.IsRunning)
             {
-                wrkSearch.CancelAsync();
+                searchWorker.StopNow();
             }
             else if (MessageBox.Show("Confirm Exit?", "Exit Search",
                 MessageBoxButtons.OKCancel) == DialogResult.OK)
