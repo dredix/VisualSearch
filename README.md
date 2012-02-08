@@ -16,6 +16,6 @@ On EPP, I setup a tool with the following command line and a shortcut key, so I 
 Requirements
 ------------
 
-* Visual Studio 2010 (any C# edition will do)
-* Microsoft .Net Framework 4.0
+* Microsoft .Net Framework 2.0
 * Just Great Software EditPad Pro
+* C# compiler, standalone or as part of Visual Studio (only if you want to compile this project)
