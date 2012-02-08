@@ -64,7 +64,6 @@ namespace VisualSearch
             {
                 worker.ReportProgress(0, "Retrieving list of files");
                 SearchOption searchOption = sc.InSubFolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                double count, total;
 #if CLRVER3_5 || CLVER4_0
                 var files = new HashSet<string>();
                 {
@@ -82,43 +81,15 @@ namespace VisualSearch
                 Dictionary<string, object> excl = null;
                 if (!SearchUtils.IsEmpty(sc.Exclude))
                 {
-                    excl = new Dictionary<string, object>();
-                    string[] excluded = sc.Exclude.Split(';');
-                    foreach (string exclude in excluded)
-                    {
-                        var exclFiles = Directory.GetFiles(sc.Folder, exclude, searchOption);
-                        count = 0D;
-                        total = exclFiles.LongLength;
-                        foreach (var file in exclFiles)
-                        {
-                            if (!excl.ContainsKey(file))
-                            {
-                                worker.ReportProgress((int)(++count * 100D / total), "Excluding file " + file);
-                                excl.Add(file, null);
-                            }
-                        }
-                    }
+                    worker.ReportProgress(25, "Building exclusion list");
+                    excl = PopulateFileHash(sc.Exclude, sc.Folder, searchOption, "Excluding ", null);
                 }
-                var incl = new Dictionary<string, object>();
-                string[] filters = sc.Filter.Split(';');
-                foreach (string filter in filters)
-                {
-                    var incFiles = Directory.GetFiles(sc.Folder, filter, searchOption);
-                    count = 0D;
-                    total = incFiles.LongLength;
-                    foreach (var file in incFiles)
-                    {
-                        if (!incl.ContainsKey(file) && (excl == null || !excl.ContainsKey(file)))
-                        {
-                            worker.ReportProgress((int)(++count * 100D / total), "Adding file " + file);
-                            incl.Add(file, null);
-                        }
-                    }
-                }
+                worker.ReportProgress(50, "Building inclusion list");
+                Dictionary<string, object> incl = PopulateFileHash(sc.Filter, sc.Folder, searchOption, "Adding ", excl);
                 var files = incl.Keys;
 #endif
                 double incr = 100d / (double)files.Count;
-                total = 0d;
+                double total = 0d;
                 int fileCount = 0, matchCount = 0, position;
                 bool fileMatch;
                 SearchEngine engine = new SearchEngine(sc);
@@ -165,6 +136,28 @@ namespace VisualSearch
             {
                 e.Result = ex.Message;
             }
+        }
+
+        private Dictionary<string, object> PopulateFileHash(string filterList, string folder, 
+            SearchOption searchOption, string actionLabel, Dictionary<string, object> excludeHash)
+        {
+            var fileHash = new Dictionary<string, object>();
+            string[] filters = filterList.Split(';');
+            foreach (string filter in filters)
+            {
+                var incFiles = Directory.GetFiles(folder, filter, searchOption);
+                double count = 0D;
+                double total = incFiles.LongLength;
+                foreach (var file in incFiles)
+                {
+                    if (!fileHash.ContainsKey(file) && (excludeHash == null || !excludeHash.ContainsKey(file)))
+                    {
+                        worker.ReportProgress((int)(++count * 100D / total), actionLabel + file);
+                        fileHash.Add(file, null);
+                    }
+                }
+            }
+            return fileHash;
         }
 
         void worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
