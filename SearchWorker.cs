@@ -64,6 +64,8 @@ namespace VisualSearch
             {
                 worker.ReportProgress(0, "Retrieving list of files");
                 SearchOption searchOption = sc.InSubFolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                double count, total;
+#if CLRVER3_5 || CLVER4_0
                 var files = new HashSet<string>();
                 {
                     string[] filters = sc.Filter.Split(';');
@@ -76,8 +78,47 @@ namespace VisualSearch
                     foreach (string exclude in excluded)
                         files.ExceptWith(Directory.GetFiles(sc.Folder, exclude, searchOption));
                 }
+#else
+                Dictionary<string, object> excl = null;
+                if (!SearchUtils.IsEmpty(sc.Exclude))
+                {
+                    excl = new Dictionary<string, object>();
+                    string[] excluded = sc.Exclude.Split(';');
+                    foreach (string exclude in excluded)
+                    {
+                        var exclFiles = Directory.GetFiles(sc.Folder, exclude, searchOption);
+                        count = 0D;
+                        total = exclFiles.LongLength;
+                        foreach (var file in exclFiles)
+                        {
+                            if (!excl.ContainsKey(file))
+                            {
+                                worker.ReportProgress((int)(++count * 100D / total), "Excluding file " + file);
+                                excl.Add(file, null);
+                            }
+                        }
+                    }
+                }
+                var incl = new Dictionary<string, object>();
+                string[] filters = sc.Filter.Split(';');
+                foreach (string filter in filters)
+                {
+                    var incFiles = Directory.GetFiles(sc.Folder, filter, searchOption);
+                    count = 0D;
+                    total = incFiles.LongLength;
+                    foreach (var file in incFiles)
+                    {
+                        if (!incl.ContainsKey(file) && (excl == null || !excl.ContainsKey(file)))
+                        {
+                            worker.ReportProgress((int)(++count * 100D / total), "Adding file " + file);
+                            incl.Add(file, null);
+                        }
+                    }
+                }
+                var files = incl.Keys;
+#endif
                 double incr = 100d / (double)files.Count;
-                double total = 0d;
+                total = 0d;
                 int fileCount = 0, matchCount = 0, position;
                 bool fileMatch;
                 SearchEngine engine = new SearchEngine(sc);
@@ -116,6 +157,7 @@ namespace VisualSearch
                     }
                     if (fileMatch) fileCount++;
                 }
+                worker.ReportProgress(100, "Search complete.");
                 e.Result = string.Format("Searched {0} files. Found {1} matches in {2} files.",
                     files.Count, matchCount, fileCount);
             }
