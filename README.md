@@ -19,3 +19,5 @@ Requirements
 * Microsoft .Net Framework 2.0
 * Just Great Software EditPad Pro
 * C# compiler, standalone or as part of Visual Studio (only if you want to compile this project)
+
+UPDATE: It turns out EditPad Pro 7 does have a [*Find on Disk*](http://www.editpadpro.com/search.html) function, which basically surpasses my app in almost every aspect. Oh well, I still like the simplicity of my approach, and I use it on a daily basis, so there you have it.
